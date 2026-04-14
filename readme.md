@@ -6,25 +6,6 @@ It uses **Terraform + Ansible** to create infrastructure and configure Elasticse
 
 ---
 
-## 🚀 What This Tool Does
-
-- Creates a full Elasticsearch 7.9 cluster (Master, Data, Ingest nodes)
-- Deploys infrastructure on AWS or GCP
-- Installs and configures Elasticsearch + Kibana
-- Enables **basic authentication**
-- Generates **internal TLS certificates (.p12)**
-- Automatically builds dynamic Ansible inventory
-
----
-
-## 🧰 Tech Stack
-
-- Terraform → Infrastructure provisioning
-- Ansible → Configuration management
-- Python → Orchestration scripts
-
----
-
 ## 📋 Prerequisites
 
 Make sure these are installed on your system:
@@ -97,46 +78,6 @@ export GOOGLE_APPLICATION_CREDENTIALS="path/to/service-account.json"
 
 ```bash
 gcloud auth list
-```
-
----
-
-## ⚙️ Configuration
-
-Before running the script, update configuration files:
-
-### 1. Terraform Variables
-
-Update:
-
-```
-terraform/variables.tf
-```
-
-Important fields:
-
-- region
-- instance_type
-- node_count
-- cloud_provider (aws/gcp)
-
----
-
-### 2. Cluster Configuration
-
-Update:
-
-```
-ansible-role/roles/elastic-cluster/defaults/main.yml
-```
-
-Example:
-
-```yaml
-elastic_cluster_name: my-elastic-cluster
-master_nodes: 1
-data_nodes: 1
-ingest_nodes: 1
 ```
 
 ---
