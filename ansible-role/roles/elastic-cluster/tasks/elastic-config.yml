@@ -1,0 +1,165 @@
+---
+
+- name: Install Elasticsearch 7.x
+  apt:
+    name: elasticsearch={{ elk_version }}
+    state: present
+
+- name: Clean old Elasticsearch data
+  file:
+    path: /var/lib/elasticsearch
+    state: absent
+
+- name: Create data directory
+  file:
+    path: /var/lib/elasticsearch
+    state: directory
+    owner: elasticsearch
+    group: elasticsearch
+    mode: "0755"
+
+- name: Set vm.max_map_count
+  ansible.posix.sysctl:
+    name: vm.max_map_count
+    value: 262144
+    state: present
+    reload: yes
+
+- name: Set JVM heap size
+  copy:
+    dest: /etc/elasticsearch/jvm.options.d/heap.options
+    content: |
+      -Xms512m
+      -Xmx512m
+
+# --- 1. CERTIFICATE GENERATION & DISTRIBUTION ---
+- name: Generate Elasticsearch certificate on Master
+  command: /usr/share/elasticsearch/bin/elasticsearch-certutil cert -out /etc/elasticsearch/elastic-certificates.p12 -pass ""
+  args:
+    creates: /etc/elasticsearch/elastic-certificates.p12
+  when: "'elasticsearch_master' in group_names"
+
+- name: Fetch certificate from Master to local
+  fetch:
+    src: /etc/elasticsearch/elastic-certificates.p12
+    dest: /tmp/elastic-certificates.p12
+    flat: yes
+  when: "'elasticsearch_master' in group_names"
+
+- name: Copy certificate to other nodes
+  copy:
+    src: /tmp/elastic-certificates.p12
+    dest: /etc/elasticsearch/elastic-certificates.p12
+    owner: root
+    group: elasticsearch
+    mode: "0640"
+  when: "'elasticsearch_master' not in group_names"
+
+- name: Ensure correct cert permissions on Master
+  file:
+    path: /etc/elasticsearch/elastic-certificates.p12
+    owner: root
+    group: elasticsearch
+    mode: "0640"
+  when: "'elasticsearch_master' in group_names"
+
+# --- 2. KEYSTORE & FILE REALM USERS ---
+- name: Create custom hyperflex user in Elasticsearch
+  shell: |
+    /usr/share/elasticsearch/bin/elasticsearch-users useradd hyperflex -p 'Elastic@123' -r superuser
+  args:
+    executable: /bin/bash
+  when: "'elasticsearch_master' in group_names"
+  ignore_errors: yes
+
+
+
+- name: Add bootstrap password
+  shell: |
+    echo "Elastic@123" | /usr/share/elasticsearch/bin/elasticsearch-keystore add -x bootstrap.password || true
+  args:
+    executable: /bin/bash
+  when: "'elasticsearch_master' in group_names"
+
+- name: Fix Elasticsearch security file permissions (Keystore & Users)
+  file:
+    path: "{{ item }}"
+    owner: root
+    group: elasticsearch
+    mode: "0660"
+  loop:
+    - /etc/elasticsearch/elasticsearch.keystore
+    - /etc/elasticsearch/users
+    - /etc/elasticsearch/users_roles
+  when: "'elasticsearch_master' in group_names"
+  ignore_errors: yes
+
+# --- 3. SNAPSHOT REPOSITORY & CONFIGURATION ---
+- name: Create snapshot directory and assign to Elasticsearch user
+  file:
+    path: /mnt/elasticsearch_snapshots
+    state: directory
+    owner: elasticsearch
+    group: elasticsearch
+    mode: "0755"
+
+- name: Configure elasticsearch.yml
+  template:
+    src: elasticsearch.yml
+    dest: /etc/elasticsearch/elasticsearch.yml
+  register: es_config
+
+- name: Restart Elasticsearch service if config changed
+  service:
+    name: elasticsearch
+    state: restarted
+  when: es_config.changed
+
+# --- 4. ENSURE SERVICE IS STARTED ---
+- name: Start Elasticsearch on master
+  service:
+    name: elasticsearch
+    state: started
+    enabled: yes
+  when: "'elasticsearch_master' in group_names"
+
+- name: Wait for master
+  wait_for:
+    host: localhost
+    port: 9200
+    timeout: 60
+  when: "'elasticsearch_master' in group_names"
+
+- name: Start Elasticsearch on other nodes
+  service:
+    name: elasticsearch
+    state: started
+    enabled: yes
+  when: "'elasticsearch_master' not in group_names"
+
+- name: Wait for Elasticsearch port
+  wait_for:
+    host: localhost
+    port: 9200
+    delay: 5
+    timeout: 60
+    
+# -------------------------------------
+- name: Set password for built-in kibana_system user via API
+  uri:
+    url: "https://localhost:9200/_security/user/kibana_system/_password"
+    method: POST
+    user: "hyperflex"
+    password: "Elastic@123"
+    force_basic_auth: yes
+    validate_certs: no
+    body_format: json
+    body:
+      password: "Elastic@123"
+    status_code: [200, 204]
+  when: "'elasticsearch_master' in group_names"
+  retries: 3
+  delay: 10
+  register: result
+  until: result.status == 200 or result.status == 204
+# -------------------------------------

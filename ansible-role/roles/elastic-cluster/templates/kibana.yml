@@ -1,0 +1,17 @@
+server.host: "0.0.0.0"
+
+# 1. Enable HTTPS for the Kibana Browser UI using the extracted files
+server.ssl.enabled: true
+server.ssl.certificate: "/etc/kibana/kibana.crt"
+server.ssl.key: "/etc/kibana/kibana.key"
+
+# 2. Connect to Elasticsearch over HTTPS
+elasticsearch.hosts:
+  [
+    "https://{{ hostvars[groups['elasticsearch_master'][0]].ansible_host }}:9200",
+  ]
+elasticsearch.username: "kibana_system"
+elasticsearch.password: "Elastic@123"
+
+# 3. Bypass Hostname Verification for dynamic AWS IPs
+elasticsearch.ssl.verificationMode: none

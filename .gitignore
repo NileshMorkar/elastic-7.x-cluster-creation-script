@@ -1,0 +1,72 @@
+# =========================
+# 🔐 Sensitive Files
+# =========================
+*.pem
+*.key
+*.p12
+*.pub
+*.json
+*.tfvars
+*.tfvars.json
+.env
+
+# =========================
+# 🧱 Terraform
+# =========================
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+crash.log
+terraform.tfstate.backup
+terraform_output.json
+
+# =========================
+# 🐍 Python
+# =========================
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# =========================
+# 🖥️ IDE / Editor
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+# 📦 OS Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# 📜 Logs
+# =========================
+*.log
+
+# =========================
+# 📡 Ansible / Inventory
+# =========================
+inventory
+inventory.*
+*.retry
+
+# =========================
+# ☁️ Cloud Specific
+# =========================
+# GCP credentials
+*service-account*.json
+
+# AWS credentials (extra safety)
+.aws/
+
+# =========================
+# 🔑 SSH Keys (Important)
+# =========================
+*-ssh-key
+*-ssh-key.pub

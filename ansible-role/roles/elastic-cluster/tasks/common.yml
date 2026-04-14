@@ -1,0 +1,24 @@
+---
+- name: Install required packages
+  apt:
+    name:
+      - apt-transport-https
+      - openjdk-11-jdk
+      - wget
+    state: present
+    update_cache: yes
+
+- name: Add Elasticsearch GPG key
+  shell: |
+    wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | apt-key add -
+  args:
+    executable: /bin/bash
+
+- name: Add Elasticsearch 7.x repository
+  apt_repository:
+    repo: "deb https://artifacts.elastic.co/packages/7.x/apt stable main"
+    state: present
+
+- name: Update apt cache
+  apt:
+    update_cache: yes

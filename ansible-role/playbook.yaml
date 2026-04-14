@@ -1,0 +1,12 @@
+---
+- name: Elasticsearch Cluster
+  hosts: elasticsearch
+  become: true
+  roles:
+    - elastic-cluster
+
+- name: Kibana Setup
+  hosts: elasticsearch_kibana
+  become: true
+  roles:
+    - elastic-cluster

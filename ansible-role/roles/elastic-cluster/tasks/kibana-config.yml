@@ -1,0 +1,42 @@
+---
+- name: Install Kibana
+  apt:
+    name: kibana={{ elk_version }}
+    state: present
+
+- name: Copy certificate to Kibana
+  copy:
+    src: /tmp/elastic-certificates.p12
+    dest: /etc/kibana/elastic-certificates.p12
+    owner: root
+    group: kibana
+    mode: '0640'
+
+# --- Extract the certificates into a format Node.js likes ---
+- name: Extract CRT from p12 for Kibana
+  command: openssl pkcs12 -legacy -in /etc/kibana/elastic-certificates.p12 -clcerts -nokeys -out /etc/kibana/kibana.crt -passin pass:""
+
+- name: Extract KEY from p12 for Kibana
+  command: openssl pkcs12 -legacy -in /etc/kibana/elastic-certificates.p12 -nocerts -nodes -out /etc/kibana/kibana.key -passin pass:""
+
+- name: Set permissions on extracted certs
+  file:
+    path: "{{ item }}"
+    owner: root
+    group: kibana
+    mode: '0640'
+  loop:
+    - /etc/kibana/kibana.crt
+    - /etc/kibana/kibana.key
+# -----------------------------------------------------------------
+
+- name: Configure kibana.yml
+  template:
+    src: kibana.yml
+    dest: /etc/kibana/kibana.yml
+
+- name: Start Kibana
+  service:
+    name: kibana
+    state: restarted
+    enabled: yes

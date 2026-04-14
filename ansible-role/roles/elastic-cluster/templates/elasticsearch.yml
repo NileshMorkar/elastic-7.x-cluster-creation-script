@@ -1,0 +1,44 @@
+# ======================== Elasticsearch Configuration =========================
+cluster.name: {{ cluster_name | default('my-elastic-cluster') }}
+node.name: {{ inventory_hostname }}
+
+# ---------------------------------- Paths -----------------------------------
+path.data: /var/lib/elasticsearch
+path.logs: /var/log/elasticsearch
+path.repo: ["/mnt/elasticsearch_snapshots"]
+
+# ---------------------------------- Network -----------------------------------
+network.host: 0.0.0.0
+http.port: 9200
+
+# --------------------------------- Discovery ----------------------------------
+discovery.seed_hosts:
+{% for host in groups['elasticsearch_master'] + groups['elasticsearch_master_eligible'] + groups['elasticsearch_data'] %}
+  - "{{ hostvars[host]['ansible_host'] }}"
+{% endfor %}
+
+cluster.initial_master_nodes:
+{% for host in groups['elasticsearch_master'] %}
+  - "{{ host }}"
+{% endfor %}
+
+# ---------------------------------- Roles -----------------------------------
+{% if 'elasticsearch_master' in group_names and 'elasticsearch_data' in group_names %}
+node.roles: [ master, data, ingest ]
+{% elif 'elasticsearch_master' in group_names or 'elasticsearch_master_eligible' in group_names %}
+node.roles: [ master ]
+{% elif 'elasticsearch_data' in group_names %}
+node.roles: [ data, ingest ]
+{% endif %}
+
+# ---------------------------------- Security ----------------------------------
+xpack.security.enabled: true
+xpack.security.transport.ssl.enabled: true
+xpack.security.transport.ssl.verification_mode: certificate
+xpack.security.transport.ssl.keystore.path: elastic-certificates.p12
+xpack.security.transport.ssl.truststore.path: elastic-certificates.p12
+
+# --- ADD THESE 3 LINES FOR HTTPS ON PORT 9200 ---
+xpack.security.http.ssl.enabled: true
+xpack.security.http.ssl.keystore.path: elastic-certificates.p12
+xpack.security.http.ssl.truststore.path: elastic-certificates.p12
