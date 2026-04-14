@@ -127,13 +127,13 @@ Important fields:
 Update:
 
 ```
-config/cluster_config.yaml
+ansible-role/roles/elastic-cluster/defaults/main.yml
 ```
 
 Example:
 
 ```yaml
-cluster_name: elastic-cluster
+elastic_cluster_name: my-elastic-cluster
 master_nodes: 1
 data_nodes: 1
 ingest_nodes: 1
@@ -176,7 +176,9 @@ This will:
 
 ## 🔐 IMP: Credentials
 
-After deployment, `Kibana` credentials will be generated:
+After deployment, `Kibana` credentials will be generated.
+
+Access the UI at: https://<KIBANA_NODE_IP>:5601
 
 - Username: `hyperflex`
 - Password: Elastic@123
