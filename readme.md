@@ -65,8 +65,10 @@ gcloud config set project <PROJECT_ID>
 
 4. Create service account (if not already):
 
-- Go to IAM → Service Accounts
-- Create key → JSON
+- Go to your GCP Console: **IAM & Admin → Service Accounts**.
+- Create a service account with the **Compute Admin** role.
+- Go to the "Keys" tab, click "Add Key", and download the JSON file.
+- Export the file path in your terminal so Terraform can find it:
 
 5. Export credentials:
 
