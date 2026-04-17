@@ -9,3 +9,8 @@ es_seed_hosts:
 
 es_master_nodes:
   - "master-node-1"
+
+# Kibana Encryption Keys (Must be at least 32 characters long)
+kibana_security_encryption_key: "another_secure_key_1234567890123456"
+kibana_reporting_encryption_key: "reporting_secure_key_1234567890123456"
+kibana_saved_objects_encryption_key: "your_super_secret_key_123456789012"
